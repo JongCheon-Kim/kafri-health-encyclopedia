@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>수산물 건강 챗봇 Ver.3.3 (Part1~7 통합 · FULL)</title>
+<style>
+  :root{
+    --bg:#0b1020;--card:#121a33;--card2:#0f1630;--ink:#eaf0ff;--muted:#9fb0d4;--accent:#7cc4ff;--accent2:#87f4c8;--chip:#1b2550;--warn:#ffcc66;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,var(--bg),#060913);color:var(--ink);font-family:Inter, Pretendard, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;}
+  .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
+  h1{font-size:22px;margin:0 0 12px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px;margin-left:8px}
+  .panel{background:var(--card);border:1px solid #1b2545;border-radius:18px;padding:16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  button{background:var(--chip);color:var(--ink);border:1px solid #273263;border-radius:999px;padding:10px 14px;font-size:14px;cursor:pointer}
+  button:hover{transform:translateY(-1px);box-shadow:0 4px 16px #00000050}
+  .pill-accent{background:#15355a;border-color:#2b71a6}
+  .pill-green{background:#0f3a30;border-color:#1b7b5f}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .card{background:var(--card2);border:1px solid #1b2545;border-radius:16px;padding:14px}
+  .tag{display:inline-flex;align-items:center;gap:8px;background:#14234d;border:1px solid #283a78;color:#a9c2ff;border-radius:999px;padding:6px 10px;font-size:12px;margin:4px 6px 0 0}
+  .muted{color:var(--muted)}
+  .kbd{display:inline-block;border:1px solid #3c4a7d;background:#0d1430;padding:2px 6px;border-radius:6px;font-size:12px;color:#cfe1ff}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .tab{background:#1a2448;border:1px solid #2d3e78;border-radius:10px;padding:8px 10px;font-size:13px;cursor:pointer}
+  .tab.active{background:#213060;border-color:#3f63c6;box-shadow:0 0 0 2px #203b7a66 inset}
+  .content{white-space:pre-wrap;line-height:1.55}
+  .path{color:#a7b8e8;font-size:12px;margin:6px 0 10px}
+  .footer{margin-top:18px;color:#88a1d8;font-size:12px}
+  input[type='text']{background:#0e1733;border:1px solid #283a78;color:#dfeaff;border-radius:10px;padding:10px 12px;width:100%}
+  .two{display:grid;grid-template-columns:360px 1fr;gap:14px}
+  @media (max-width:960px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>수산물 건강 챗봇 <span style="color:var(--accent)">Ver.3.3</span><span class="sub">Part1~7 통합본 · 버튼형 + 검색 + 단축키</span></h1>
+    <div class="panel two">
+      <div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="muted" style="margin-bottom:8px">① 효능(대분류) 선택 <span class="muted">· 클릭 또는 <span class="kbd">숫자키</span></span></div>
+          <div id="effRow" class="row"></div>
+          <div class="footer">숫자 단축키: 1~7 · 재선택은 다시 클릭</div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div class="muted" style="margin-bottom:8px">② 수산물(중분류) 선택 <span class="muted">· 클릭 또는 검색</span></div>
+          <input id="search" type="text" placeholder="이름으로 빠르게 검색 (예: 김, 바지락, 방어...)" />
+          <div id="itemRow" class="row" style="margin-top:10px"></div>
+          <div class="footer">현재 선택한 효능에서만 검색됩니다.</div>
+        </div>
+
+        <div class="card">
+          <div class="muted" style="margin-bottom:8px">③ 세부정보(소분류) 선택 <span class="muted">· 클릭 또는 <span class="kbd">QWERTY</span> 단축키</span></div>
+          <div id="tabRow" class="tabs"></div>
+          <div class="footer">단축키: Q(역사) W(영양) E(효용) R(제철) T(조리) Y(요리)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="path" class="path">효능 → 수산물 → 세부정보 순으로 선택하세요.</div>
+        <div id="viewer" class="content">선택한 항목의 내용이 여기에 표시됩니다.</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:14px">
+      <span class="tag">하이브리드 조작: 클릭 + 숫자/문자 키</span>
+      <span class="tag">데이터 출처: 소장님 제공 Part1~7 이미지</span>
+      <span class="tag" style="background:#3b2a12;border-color:#6b4d1a;color:#ffdca8">주의: Ver3.2 문체 준수 · 문장 정돈만, 의미 동일</span>
+    </div>
+  </div>
+
+<script>
+const sections = [
+  {key:'intro', name:'역사적 출처(도입)'},
+  {key:'nutri', name:'주요 영양소'},
+  {key:'benefit', name:'약효 및 효용'},
+  {key:'season', name:'제철 및 선택법'},
+  {key:'cooktips', name:'조리 포인트'},
+  {key:'pair', name:'어울리는 요리'},
+];
+
+const effects = [
+  {key:'bp',       name:'고혈압 예방'},
+  {key:'liver',    name:'간기능 향상'},
+  {key:'met',      name:'성인병 예방'},
+  {key:'osteo',    name:'골다공증 예방'},
+  {key:'beauty',   name:'노화방지·피부미용'},
+  {key:'stamina',  name:'스태미나 효과'},
+  {key:'growth',   name:'성장발육 촉진'},
+];
+
+const P = (...lines) => lines.join('\n');
+
+const DB = {
+  bp: {
+    '김': { intro: P('삼국시대 기록·대표 해조','건조·저장 가능, 군량·세시음식 이용'),
+      nutri: P('칼륨·요오드·철·비타민B군','식이섬유(알긴산)·베타카로틴'),
+      benefit: P('칼륨 → 나트륨 배출 보조로 혈압 안정','요오드 → 갑상선 대사 조절','식이섬유 → 지질 흡착·대사 개선'),
+      season: P('겨울(11~3월) 향미·영양 우수','색 균일·비린내 적은 것'),
+      cooktips: P('기름·소금 과다 사용 지양','짧은 가열·무침 등 최소 조리'),
+      pair: P('김무침','김밥','김국') },
+    '다시마': { intro: P('조선 문헌에 해조 채취 기록','육수·절임·약선 재료로 활용'),
+      nutri: P('알긴산·요오드·칼륨','칼슘·마그네슘'),
+      benefit: P('알긴산 → 콜레스테롤 흡착·배출','칼륨 → 혈압조절 보조','요오드 → 대사 균형'),
+      season: P('초여름 채취·건조 유통','표면 광택·두께 균일'),
+      cooktips: P('오래 끓이지 않고 우려내기','절임·무침 시 염분 최소'),
+      pair: P('다시마육수','초무침','절임') },
+    '멸치': { intro: P('어염·젓갈·육수 재료로 지속 기록','전국적 보급·활용'),
+      nutri: P('칼슘·인·철','타우린·비타민D/B군'),
+      benefit: P('칼슘·마그네슘 → 혈관 긴장 조절','타우린 → 혈압 안정','EPA/DHA → 지질 개선'),
+      season: P('봄·가을 어획 많음','은빛·건조 균일·이취 적음'),
+      cooktips: P('과가열·산패 주의','내장 제거 후 용도 구분'),
+      pair: P('멸치육수','멸치볶음','멸치국수') },
+    '가리비': { intro: P('연해 채취·건해산물 기록','제례·접대 음식 이용'),
+      nutri: P('타우린·아르기닌','단백질·비타민B12'),
+      benefit: P('타우린·아르기닌 → 혈압 안정·혈류 개선','저지방 고단백 → 지질 관리'),
+      season: P('겨울~초봄 풍미 우수','패각 손상·잡내 여부 확인'),
+      cooktips: P('과열 시 질김·수분 손실','찜·버터구이 등 단시간 조리'),
+      pair: P('가리비찜','버터구이','초회') },
+    '미역': { intro: P('고문헌·산후 회복식 기록','제례·궁중병찬 활용'),
+      nutri: P('요오드·칼륨·칼슘·마그네슘','식이섬유·알긴산'),
+      benefit: P('칼륨 → 나트륨 배출·혈압 조절','알긴산 → 지질 흡착·배출'),
+      season: P('봄 채취·건조품 유통','색 진하고 조직 얇은 것'),
+      cooktips: P('짧은 가열로 식감 유지','소금기 제거 후 간 최소'),
+      pair: P('미역국','미역무침','초무침') },
+    '톳': { intro: P('제주·남해 자생 전통 해조','건조·절식·반찬 활용'),
+      nutri: P('식이섬유·칼슘·철','요오드·마그네슘'),
+      benefit: P('식이섬유 → 콜레스테롤 저감','미네랄 → 혈압·혈관 건강 보조'),
+      season: P('봄 채취·건조 유통','윤기·잡티·염분 확인'),
+      cooktips: P('불린 후 짧게 데침','짠맛 제거 후 무침·밥류'),
+      pair: P('톳밥','톳무침','된장국') },
+    '우뭇가사리': { intro: P('여름 냉채·젤리 식단 기록','사찰·궁중에서 활용'),
+      nutri: P('식이섬유(한천)','극저열량·무지방'),
+      benefit: P('식이섬유 → 지질 흡착·배출','저열량 → 대사질환 식단 적합'),
+      season: P('가공품 연중 유통','투명도·탄력·향 확인'),
+      cooktips: P('냉침 후 굳혀 활용','당·드레싱 과다 주의'),
+      pair: P('우뭇가사리 냉채','한천젤리','묵요리') },
+    '매생이': { intro: P('남해안 겨울 특산 해조','보양 개념으로 활용'),
+      nutri: P('철·칼슘·요오드','비타민A·C·식이섬유'),
+      benefit: P('식이섬유 → 지질 개선','미네랄 → 혈압·순환 안정'),
+      season: P('12~2월 제철','색 진하고 결 고운 것'),
+      cooktips: P('짧은 가열로 식감 유지','굴·조개류와 배합'),
+      pair: P('매생이굴국','매생이전','죽') }
+  },
+
+  liver: {
+    '꼬막': { intro: P('남해안·서해안 갯벌 채취 기록 다수','젓갈·숙회·속식(보양) 재료로 활용'),
+      nutri: P('타우린·철·비타민 B12','단백질·아미노산'),
+      benefit: P('타우린 → 간 해독·담즙 분비 촉진','철·B12 → 빈혈 개선 보조로 간 대사 부담 완화'),
+      season: P('겨울철(11~2월) 살·풍미 최상','껍데기 단단·입 닫힘·해감 상태 확인'),
+      cooktips: P('과열 시 질김 증가 → 단시간 가열','해감 철저·염분 최소화'),
+      pair: P('꼬막무침','꼬막비빔밥','꼬막숙회') },
+    '재첩': { intro: P('내륙 하천·호수 등에서 채취되어 민간 해장식으로 사용','『임원경제지』 등에서 간열(肝熱) 완화 식재로 언급'),
+      nutri: P('타우린·메티오닌 등 황아미노산','비타민 B군','무기질 소량'),
+      benefit: P('타우린 → 간세포 보호·담즙분비 촉진','황아미노산 → 해독·염증 완화 보조'),
+      season: P('여름철 풍미 우수(연중 채취 가능)','패각 깨짐·토사 잔류 여부 확인'),
+      cooktips: P('짧은 가열로 국물감 살림','해감 철저 후 염분 최소화'),
+      pair: P('재첩국','재첩미역국','재첩국수') },
+    '바지락': { intro: P('서해·남해 갯벌 대표 패류 — 조선시대 식용·젓갈 기록','해장·해독 음식으로 민간 활용 다수'),
+      nutri: P('타우린·비타민 B12','단백질·철·아미노산'),
+      benefit: P('타우린 → 간 기능 회복·담즙 분비 촉진','수분·전해질 공급 → 숙취·피로 회복 보조'),
+      season: P('봄·가을 풍미 우수','패각 닫힘·해감 상태·비린내 여부 확인'),
+      cooktips: P('장시간 가열 시 질김·감칠 감소','해감 후 간 최소화하여 조리'),
+      pair: P('바지락국','바지락술찜','바지락칼국수') },
+    '대합': { intro: P('갯벌 패류 중 대형종 — 연회·제수에 활용','건조·염장 형태 유통 기록 존재'),
+      nutri: P('타우린·비타민 B12','단백질·철·무기질'),
+      benefit: P('타우린 → 간세포 보호·담즙분비 촉진','저지방 고단백 → 간대사 부담 경감'),
+      season: P('봄~초여름 풍미 양호','껍데기 균열·이물·해감 여부 확인'),
+      cooktips: P('짧은 가열로 수분 유지','염분·양념 최소화 권장'),
+      pair: P('대합탕','대합찜','대합죽') },
+    '오징어': { intro: P('동해·남해 주어종 — 건오징어·젓갈 기록 풍부','보신·숙취 회복 음식으로 민간 이용'),
+      nutri: P('타우린·아르기닌','단백질·비타민 B군','무기질(인·마그네슘)'),
+      benefit: P('타우린 → 간 해독·담즙 분비 촉진','아르기닌 → 혈류개선·피로대사 보조'),
+      season: P('여름~가을 신선도 우수','눈 투명·살 탄력·비린내 여부 확인'),
+      cooktips: P('과열 시 질김 증가 → 단시간 가열','간장·소금 사용 최소화'),
+      pair: P('오징어볶음','숙회','무침','순대') },
+    '문어': { intro: P('보신용·환후식(휴양·회복식) 언급','삶아 접대·제례 사용 기록'),
+      nutri: P('타우린·아르기닌','단백질·비타민 B군','철·구리 등 미네랄'),
+      benefit: P('타우린 → 간기능 보호·담즙 분비 촉진','아르기닌 → 혈류 개선·피로 회복 보조'),
+      season: P('가을~겨울 살·향 우수','흡판 탄력·점액 맑음·비린내 여부 확인'),
+      cooktips: P('단시간 가열 또는 완전저속 조리 두 극단','염분 최소화'),
+      pair: P('문어숙회','문어초회','문어무침','문어밥') },
+    '낙지': { intro: P('『동의보감』 기력회복·보양 식재 언급','연안 어획·주점·속식 재료로 빈출'),
+      nutri: P('타우린·아르기닌','단백질·비타민 B군','철·칼륨'),
+      benefit: P('타우린 → 간 피로 회복·담즙 분비 촉진','아르기닌 → 혈류·신진대사 개선'),
+      season: P('봄·가을 풍미 양호','다리 탄력·점액 투명·비린내 적음 확인'),
+      cooktips: P('단시간 가열로 연함 유지','자극적 양념 과다 시 기능성 저감'),
+      pair: P('낙지탕탕이','연포탕','낙지볶음') },
+    '대하': { intro: P('서해안 가을 축제·접대 음식 기록','저장·건조·젓갈 등 복합 가공 식재'),
+      nutri: P('타우린·아르기닌','단백질·비타민 B12','미네랄(아연·마그네슘)'),
+      benefit: P('타우린 → 간 해독·담즙 분비 촉진','아르기닌 → 혈류 개선·대사 피로 저감'),
+      season: P('가을(9~11월) 최적 풍미','활력·선홍색·비린내 여부 확인'),
+      cooktips: P('과열 시 질김·산패 우려','소금·버터 등 염·지방 과다 주의'),
+      pair: P('대하구이','대하찜','탕·전골류') },
+    '꽃게': { intro: P('염장·탕·숙회 재료 기록(임원경제지 등)','봄·가을 보양·회복 식단 활용'),
+      nutri: P('타우린·아르기닌','단백질·비타민 B12','칼슘·아연'),
+      benefit: P('타우린 → 간 해독·담즙 분비 촉진','단백질+미네랄 → 간 회복기 영양 보충'),
+      season: P('봄(암게)·가을(수게) 별미','껍데기 단단·중량감·내장 상태 확인'),
+      cooktips: P('오래 끓이지 않고 단시간 가열','고염 간장 절임 과다 섭취 주의'),
+      pair: P('꽃게탕','꽃게무침','간장게장') },
+    '주꾸미': { intro: P('해안가 속식·노동자 회복식으로 소비','봄철 제철 어획 — 민간 보양 개념'),
+      nutri: P('타우린·아르기닌','단백질·비타민 B군','철·마그네슘'),
+      benefit: P('타우린 → 간 해독·담즙 분비 촉진','아르기닌 → 혈류 개선·피로 회복 보조'),
+      season: P('봄철(3~5월) 살·감칠 최상','점액 투명·탄력·비린내 여부 확인'),
+      cooktips: P('단시간 가열','자극적 양념 과다 사용 지양'),
+      pair: P('주꾸미볶음','숙회','주꾸미샤브') },
+    '소라': { intro: P('남해안·제주 채취 기록 — 초회·보양식 활용','삶아 초회로 사용된 사례'),
+      nutri: P('타우린·아르기닌','단백질·비타민 B12','칼슘·철·아연'),
+      benefit: P('타우린 → 간 해독·담즙 분비 촉진','아르기닌 → 혈류 및 대사 회복 보조'),
+      season: P('봄~여름 어획량 증가','패각 깨짐·악취·해감 상태 확인'),
+      cooktips: P('과열 시 질김 증가 → 단시간 조리','해감 철저·염도 최소화'),
+      pair: P('소라숙회','소라초무침','소라라면') }
+  },
+
+  met: {
+    '복어': { intro: P('조선시대 금식령 대상이었으나 보양·연회용으로 제한적 소비','겨울철 선도 유지 용이 — 지역 식문화 형성'),
+      nutri: P('고단백 저지방','타우린·비타민 B군','미네랄 소량'),
+      benefit: P('저지방 고단백 → 체중·지질 관리','타우린 → 혈압·순환 안정·피로대사 보조'),
+      season: P('겨울철 풍미·조직 최상','내장 제거 위생 처리 이력 확인 필수'),
+      cooktips: P('독소 부위 분리된 전처리 제품만 사용','탕·회·볶음 모두 단시간 조리'),
+      pair: P('복어탕','복불고기','복초회') },
+    '삼치': { intro: P('남해·제주 어획 — 세시음식·건어·젓갈 활용','지방 대비 소화 용이 어류'),
+      nutri: P('EPA·DHA(오메가-3)','비타민 D·B군','단백질'),
+      benefit: P('오메가-3 → 중성지방·LDL 저감·동맥경화 예방','비타민 D → 대사·면역 균형'),
+      season: P('가을~겨울 지방 상승','살 탄력·은빛·저이취 확인'),
+      cooktips: P('굽기 시 탈지 과다 방지','소금 과열·염분 과다 주의'),
+      pair: P('삼치구이','조림','회무침') },
+    '숭어': { intro: P('연안 내만 어획 — 겨울 별미','숙성회·젓갈 이용'),
+      nutri: P('오메가-3(EPA·DHA)','비타민 D·단백질','미네랄(철·마그네슘)'),
+      benefit: P('오메가-3 → 혈중지질 개선·동맥경화 예방','저지방 고단백 → 성인병 식단 적합'),
+      season: P('겨울철 살·향 우수','비늘·살 탄력·선도 확인'),
+      cooktips: P('비린내 제거 후 저염 조리','과조리 시 식감·향 저하'),
+      pair: P('숭어회','구이','조림') },
+    '고등어': { intro: P('남해 염장·건어 교역 활발 — 일상 반찬','해남축 식단 빈출'),
+      nutri: P('오메가-3(EPA·DHA)','비타민 D·B12','단백질·칼륨'),
+      benefit: P('오메가-3 → 중성지방·LDL 저감·혈관노화 억제','칼륨 → 나트륨 배출로 혈압 안정'),
+      season: P('가을~겨울 지방 풍미 최고','선도·지방선·이취 확인'),
+      cooktips: P('염장·양념 과다 지양','구이·조림 과열 방지'),
+      pair: P('고등어구이','고등어조림','시래기탕') },
+    '방어': { intro: P('겨울 지방어 — 남해·제주 별미','제사·접대·연회용 소비'),
+      nutri: P('오메가-3(EPA·DHA)','비타민 D·단백질','미네랄(철·칼륨)'),
+      benefit: P('오메가-3 → 지질대사 개선·혈전 억제','단백질 → 체중·대사 관리'),
+      season: P('11~2월 풍미 최고','혈합육 선홍·지방선 균일·저이취'),
+      cooktips: P('회는 신선도 최우선','간장·양념 절제 — 저염'),
+      pair: P('방어회','방어초밥','구이') },
+    '다랑어(참치)': { intro: P('대형 회유어 — 염장·훈연·회식','현대: 캔·선어·냉동 대량 유통'),
+      nutri: P('오메가-3(EPA·DHA)','단백질·비타민 D','철·셀레늄'),
+      benefit: P('오메가-3 → 중성지방 저감·동맥경화 예방','단백질 → 대사 조절 식단 적합'),
+      season: P('가공·냉동 유통 일반화 — 선도 판단 중요','색·지방선·이취 확인'),
+      cooktips: P('선도 유지 생식·저온조리 권장','마요·소금·간장 과다 지양'),
+      pair: P('참치회','타다끼','스테이크','캔요리') },
+    '꽁치': { intro: P('가을어 — 염장·건조·구이로 널리 소비','서민 일상반찬·가을별미'),
+      nutri: P('오메가-3(EPA·DHA)','비타민 D·B12','단백질·칼슘(뼈째)'),
+      benefit: P('오메가-3 → 혈중지질 개선·동맥경화 예방','비타민 D → 대사·면역 균형'),
+      season: P('가을 지방 풍미 최고','눈 투명·은빛·비린내 여부'),
+      cooktips: P('직화 시 산패연기 주의(완전연소 불)','짠 양념·염장 과다 지양'),
+      pair: P('꽁치구이','조림','통조림요리') }
+  },
+
+  osteo: {
+    '정어리': { intro: P('근해 어획 후 염장·건조·젓갈로 광범위 활용','조선 후기 식탁과 저장식품 기록 다수'),
+      nutri: P('칼슘·인·비타민 D','오메가-3(EPA·DHA)','단백질·철'),
+      benefit: P('칼슘+비타민D → 골밀도 유지·골다공증 예방 보조','오메가-3 → 지질 개선·혈관건강 보조'),
+      season: P('가을~겨울 지방·풍미 우수','선도·은빛광택·비린내 여부 확인'),
+      cooktips: P('뼈째 섭취 시 칼슘 흡수 유리','염장·조림 시 염도 과다 주의'),
+      pair: P('정어리구이','정어리조림','통조림요리','젓갈류') },
+    '뱅어': { intro: P('내만·하구에서 대량 어획 — 젓갈·전·튀김 활용','민가 일상 식재료 기록'),
+      nutri: P('칼슘·인지질·비타민 D','단백질·철'),
+      benefit: P('칼슘+비타민D → 골밀도 유지·골다공증 예방 보조','단백질 → 근육 유지·노쇠 방지 보조'),
+      season: P('봄~초여름 선어 풍미 우수','흰빛·맑은 냄새·무점착 확인'),
+      cooktips: P('뼈째 섭취 시 칼슘 흡수 유리','과다 튀김 시 지방산 산화 우려'),
+      pair: P('튀김','전','젓갈','무침') },
+    '홍어': { intro: P('함경·전라도 해역 염장·발효 문화','제사·연회·접대용 고급 어식 기록'),
+      nutri: P('단백질·칼슘·비타민 B군','콜라겐'),
+      benefit: P('칼슘·단백질 → 뼈·근육 유지','발효성분 → 소화 보조','콜라겐 → 관절 보강 보조'),
+      season: P('겨울철(12~3월) 선도·발효 안정','암모니아향·점액·변색 확인'),
+      cooktips: P('과발효 방지 — 보관온도·기간 관리','날 것·삼합·찜 등 저가열'),
+      pair: P('회','삼합','찜','무침') },
+    '미더덕': { intro: P('남해·통영 양식·채취','초장무침·탕·해장식 문화'),
+      nutri: P('칼슘·인·칼륨','아미노산','비타민 B군'),
+      benefit: P('칼슘·인 → 골밀도 유지','아미노산 → 피로 대사 보조','칼륨 → 나트륨 배출'),
+      season: P('봄~초여름','외피 손상·이취 확인'),
+      cooktips: P('단시간 조리 — 향 손실 방지','양념·염분 과다 지양'),
+      pair: P('초무침','탕','찜','찌개') },
+    '연어': { intro: P('양식·수입 확대 — 과거 염장·훈연 중심','북태평양 회유어 기록'),
+      nutri: P('오메가-3(EPA·DHA)','비타민 D·단백질','칼슘·인(뼈째)'),
+      benefit: P('오메가-3 → 염증·지질대사 개선','비타민D+칼슘 → 골밀도 유지'),
+      season: P('가을 회귀철(야생)','양식은 지방선·색 균질·이취 확인'),
+      cooktips: P('생식 위생·온도 관리','고온조리 시 산화 주의'),
+      pair: P('훈제','회','스테이크','샐러드') },
+    '농어': { intro: P('서해·남해 연안 어획 기록','궁중·연회용 생선 활용'),
+      nutri: P('단백질·칼슘(뼈째)','비타민 D·B군','칼륨'),
+      benefit: P('단백질 → 근육·대사 유지','비타민D+칼슘 → 골밀도 유지','칼륨 → 나트륨 배출'),
+      season: P('여름~가을 풍미 우수','살 탄력·눈 투명·저이취'),
+      cooktips: P('과열 시 건조','생식·구이·탕 — 염분 최소'),
+      pair: P('회','구이','탕·지리','찜') },
+    '파래': { intro: P('해안 갯벌·암반 채취 — 전·무침 일상 식재','조선 후기 연안 식생활 기록'),
+      nutri: P('칼슘·마그네슘','식이섬유·비타민 A·C','요오드'),
+      benefit: P('칼슘+마그네슘 → 뼈대사 균형','식이섬유 → 지질 흡착·장내 개선','요오드 → 대사 조절'),
+      season: P('겨울~초봄 향·색 우수','색 균일·이물 확인'),
+      cooktips: P('짧게 가열 — 향 유지','염분·기름 과다 지양'),
+      pair: P('무침','전','김치','탕·죽') },
+    '임연수어': { intro: P('북태평양 어획 — 건조·구이류 소비','조선 후·근대 염건 저장식 보급'),
+      nutri: P('단백질·칼슘(뼈째)','비타민 D·B군','오메가-3 소량'),
+      benefit: P('칼슘+비타민D → 골밀도 유지','단백질 → 근육 유지','오메가-3 → 지질대사 보조'),
+      season: P('겨울~봄 풍미','건조품 색·잡내·기름 균일성'),
+      cooktips: P('직화·조림 — 고온 산화 주의','건염품 담금 후 저염 조리'),
+      pair: P('구이','조림','찜','건염 조리') }
+  },
+
+  beauty: {
+    '아귀': { intro: P('남해·동해 연안 — 겨울 별미·가치 재발견'),
+      nutri: P('콜라겐·엘라스틴','비타민B군','EPA·DHA'),
+      benefit: P('콜라겐 → 피부보습·탄력','B군 → 피부재생·노화 억제','오메가3 → 항염·지질 조절'),
+      season: P('11~2월 제철','껍질 탄력·저이취'),
+      cooktips: P('데친 후 냉수 — 식감','맑게·얼큰 모두 가능 — 간 최소'),
+      pair: P('아귀찜','수육','탕','껍질무침') },
+    '대구': { intro: P('겨울 약선 — 사찰·회복식'),
+      nutri: P('저지방 고단백','비타민 B군','칼슘·칼륨·철'),
+      benefit: P('저지방 단백질 → 노화 억제','오메가3 → 염증 완화','B군 → 피부·신경'),
+      season: P('11~2월 산란 전','살 단단·흰결·저이취'),
+      cooktips: P('과열 시 퍽퍽 — 수분관리','머리·간 활용'),
+      pair: P('대구탕','머리찜','포조림','북어국') },
+    '병어': { intro: P('진상품·귀어 — 소화 용이 고급 생선'),
+      nutri: P('DHA·EPA','비타민 B군','칼슘·인·철'),
+      benefit: P('오메가3 → 노화 지연','B군 → 피부·신경','저열량 → 성인병 예방'),
+      season: P('3~7월 최상','은백윤기·탄성·저이취'),
+      cooktips: P('과열 금지·뒤집기 최소'),
+      pair: P('조림','찜','구이','감자조림') },
+    '청어': { intro: P('염장·젓갈 기록 다수 — 민생 어자원'),
+      nutri: P('DHA·EPA','비타민 D·B12','칼슘·철·인'),
+      benefit: P('오메가3 → 항염·항산화','비타민D+칼슘 → 골밀도·피부 턴오버','철·B12 → 혈색 개선'),
+      season: P('12~2월 지방 극대','복부 터짐·갈변 주의'),
+      cooktips: P('저온·단시간 가열','염분 관리'),
+      pair: P('초절임','구이','젓갈','훈제') },
+    '빙어': { intro: P('겨울 내수면 대량 소비·축제'),
+      nutri: P('칼슘·인(뼈째)','비타민 B군','단백질'),
+      benefit: P('칼슘·인 → 골밀도','단백질 → 근육','저열량 → 대사성 노화 지연'),
+      season: P('1~2월 혹한기','투명도·저이취'),
+      cooktips: P('뼈째 섭취','튀김 단시간'),
+      pair: P('튀김','전','회','탕') },
+    '광어': { intro: P('연회·제례 기록 — 양식 보편'),
+      nutri: P('저지방 고단백','비타민 B군','칼륨·마그네슘','타우린'),
+      benefit: P('저지방 단백질 → 노화 지연','타우린 → 간·피로','칼륨 → 부종·혈관'),
+      season: P('양식 주류·계절 영향 적음','살결 탄성·저이취'),
+      cooktips: P('생식·숙성 적합 — 과열 건조 주의'),
+      pair: P('회','초밥','숙성회','초무침') },
+    '가자미': { intro: P('전역 분포 — 저장성·조리폭 넓음'),
+      nutri: P('저지방 고단백','칼슘·인(건조·뼈째)','비타민 B2·B12','타우린'),
+      benefit: P('저지방 단백질 → 대사 보조','B군 → 피부·혈색','칼슘·인 → 골밀도','타우린 → 간·피로'),
+      season: P('늦가을~초봄 안정','물러짐·이취 급증 주의'),
+      cooktips: P('과열 금지','건조품 충분히 불려 염도 조절'),
+      pair: P('식해','조림','탕','건가자미구이') }
+  },
+
+  stamina: {
+    '해삼': { intro: P('보양·회복 식재 — 겨울 채취·건조 저장'),
+      nutri: P('콜라겐','무기질(칼슘·인·철)','비타민B군'),
+      benefit: P('콜라겐 → 피부·상처 회복','점액 → 위점막 보호','저지방 고단백 → 회복·체중조절'),
+      season: P('12~2월 품질 우수','탄력·내장·팽윤력 확인'),
+      cooktips: P('저온·단시간 처리','복수 과정 과열 금지'),
+      pair: P('회·초무침','냉채','전복탕·불도장') },
+    '멍게': { intro: P('보양식 기록·국내 양식·자연산 — 일본: 호야'),
+      nutri: P('타우린','B12·E','요오드·아연·철','저지방 고단백'),
+      benefit: P('타우린 → 간·피로','B12 → 신경·빈혈','산성 다당류 → 항산화·항염'),
+      season: P('4~7월 풍미','표피 손상 무·내막 탄성'),
+      cooktips: P('붉은 유액 제거','생식·단시간 처리'),
+      pair: P('비빔밥·회무침','젓갈','된장국·밥') },
+    '성게': { intro: P('보양 기록 — 일본 우니 문화'),
+      nutri: P('고단백 저지방','EPA·DHA','비타민 A·E·B군','아연·철·요오드','타우린'),
+      benefit: P('오메가3 → 혈류·항염','A/E → 항산화','타우린 → 간·피로'),
+      season: P('초여름~한여름','알 결착·윤기·탄력'),
+      cooktips: P('가열 손실 큼 — 생식 권장','김·초밥 조합'),
+      pair: P('우니비빔밥','성게미역국','우니파스타·초밥') },
+    '굴': { intro: P('겨울 진상품·보양식','양식 보급'),
+      nutri: P('아연·철·구리','B12·A·E','글리코겐','타우린'),
+      benefit: P('아연 → 정자·호르몬 합성 보조','타우린 → 간·피로·대사','B12 → 신경 안정'),
+      season: P('11~2월 위생·풍미','광택·수축력·패각 이물'),
+      cooktips: P('생식 위생·살균','가열 단시간'),
+      pair: P('굴회','굴전','굴국밥','굴솥밥') },
+    '붕장어': { intro: P('연회·보양 기록 — 일본 아나고'),
+      nutri: P('비타민 A·E','DHA·EPA','단백질','칼슘·인·철'),
+      benefit: P('A/E → 항산화·점막 보호','오메가3 → 순환·항염','단백·무기질 → 기력 보조'),
+      season: P('5~8월 균형 우수','손질·점액 제거 중요'),
+      cooktips: P('단시간 고열','양념 과열·산화 주의'),
+      pair: P('덮밥','구이','초밥','조림') },
+    '전복': { intro: P('진상품·보신·회복식','제주·남해 채취·양식'),
+      nutri: P('타우린·B군','칼슘·철·아연','핵산'),
+      benefit: P('타우린 → 간·피로','B군 → 신경·면역','핵산 → 활력·안구피로'),
+      season: P('6~8월 제철','입닫힘·윤기·중량·내장'),
+      cooktips: P('과열 경화 — 짧은 조리','내장 최소열'),
+      pair: P('죽','버터구이','찜','회','게우무침') },
+    '장어': { intro: P('보양어 — 조선 병후·원기회복','일본 우나기 문화'),
+      nutri: P('비타민 A·E','DHA·EPA','단백질','칼슘·인·철'),
+      benefit: P('A/E → 항산화·점막','오메가3 → 혈류·항염','단백·무기질 → 기력'),
+      season: P('여름 지방 축적','점액·탄성·이취 확인'),
+      cooktips: P('고열 직화','장시간 과열 금지'),
+      pair: P('구이','덮밥','탕','강정') },
+    '미꾸라지': { intro: P('보양·회복·기력증진 — 농경지 단백원'),
+      nutri: P('고단백','비타민 A·B군','칼슘·인(뼈째)','철·아연'),
+      benefit: P('단백질 → 근육·재생','비타민A → 점막·피부','칼슘·인 → 골밀도'),
+      season: P('장마 전후','점액·탄성·이취 확인'),
+      cooktips: P('해감·세척 충분','장시간 가열로 뼈 연화'),
+      pair: P('추어탕','전골','볶음') },
+    '전어': { intro: P('가을 대표 — 회·젓·구이','전통 일상어류'),
+      nutri: P('EPA·DHA','비타민 A·E','칼슘(뼈째)','단백질'),
+      benefit: P('오메가3 → 혈류·항염','A/E → 항산화','칼슘 → 골격대사'),
+      season: P('9~10월 지방 축적','비늘·복부 은광택·선도'),
+      cooktips: P('생식 세척·뼈처리','젓갈 염농도 관리','구이·조림 과열 금지'),
+      pair: P('회·무침','젓갈','구이·김초밥') }
+  },
+
+  growth: {
+    '조기': { intro: P('조선 후기 다량 등장 — 민가 단백 자원'),
+      nutri: P('단백질','칼슘','나이아신(B3)','철'),
+      benefit: P('단백질 → 근육·성장','칼슘 → 골격','나이아신 → 대사·순환'),
+      season: P('봄 4~6월 지방 균형','비늘·아가미·복부·건조품 상태 확인'),
+      cooktips: P('내장 제거·소금간','저온·단시간','저염 조리'),
+      pair: P('구이','조림','젓','탕·지리') },
+    '민어': { intro: P('여름 보양어 — 연회·회복식'),
+      nutri: P('고단백','칼슘·인','비타민 B군'),
+      benefit: P('단백질 → 근육·조직','칼슘·인 → 골격','B군 → 에너지·신경'),
+      season: P('7~8월 풍미','탄력·저이취·중형 선호'),
+      cooktips: P('장시간 조리 금지','저염 탕·전·조림','숙성회 온도 관리'),
+      pair: P('탕','전','조림','회') },
+    '갈치': { intro: P('남해·제주 — 저장·연회'),
+      nutri: P('단백질','칼슘','비타민 D','EPA·DHA'),
+      benefit: P('단백질 → 근육','칼슘+비타민D → 골격','오메가3 → 대사 안정'),
+      season: P('8~11월','은백광택·탄성·절단부 확인'),
+      cooktips: P('과열 금지','저염 조리','튀김 단시간'),
+      pair: P('구이','조림','국','튀김') },
+    '메기': { intro: P('장마철 보양식 — 내수면 단백원'),
+      nutri: P('단백질','칼슘(뼈째)','비타민 D','비타민 B군'),
+      benefit: P('단백질 → 성장·조직','칼슘+비타민D → 골격','B군 → 대사·신경'),
+      season: P('6~8월','점액·이취·사료취 확인'),
+      cooktips: P('해감·세척','전골·탕 장시간 가열','향채 보완'),
+      pair: P('매운탕','전골','찜') },
+    '잉어': { intro: P('보양·회복 — 산후·병후 언급'),
+      nutri: P('단백질','칼슘·인','비타민 A·B군','철'),
+      benefit: P('단백질 → 성장·근육','칼슘·인 → 골격','비타민A+B군 → 점막·대사'),
+      season: P('봄 산란 전후','점액·비린내·복부·사료취 확인'),
+      cooktips: P('해감','장시간 가열 — 뼈 연화','저염'),
+      pair: P('탕','찜','죽') },
+    '새조개': { intro: P('겨울 채취 — 연회·해장·강장'),
+      nutri: P('고단백 저지방','타우린','칼륨','비타민 B군'),
+      benefit: P('단백질 → 성장','타우린 → 간·피로','칼륨 → 전해질·혈압'),
+      season: P('1~3월','패각·탄성 확인'),
+      cooktips: P('단시간 데침·샤브','저염 초무침'),
+      pair: P('샤브','초무침','숙회') },
+    '참돔': { intro: P('궁중 길상어 — 귀어 기록'),
+      nutri: P('단백질','칼슘·인','비타민 D','타우린'),
+      benefit: P('단백질 → 근육','칼슘+비타민D → 골격','타우린 → 간·피로'),
+      season: P('3~5월','홍반·눈·탄성'),
+      cooktips: P('생식·숙성 — 과열 금지','저염'),
+      pair: P('회','숙성회','조림','머리탕','솥밥') },
+    '가물치': { intro: P('상처 치유·회복 — 내수면 보양'),
+      nutri: P('고단백','콜라겐','철·칼륨','비타민 B군'),
+      benefit: P('콜라겐 → 조직 회복','단백질 → 성장 촉진','철 → 혈액·체력'),
+      season: P('초여름~가을','점액·탄성·냄새'),
+      cooktips: P('탕·전골 장시간','향채·엽채 병행'),
+      pair: P('탕','전골','약선') },
+    '쏘가리': { intro: P('청정 내수면 — 회·탕 기록'),
+      nutri: P('고단백 저지방','칼슘(뼈째)','비타민 B군','칼륨'),
+      benefit: P('단백질 → 성장·조직','칼륨 → 순환 보호','B군 → 대사·피로'),
+      season: P('봄~초여름','비늘·눈·점액'),
+      cooktips: P('생식 위생','지리·전골 저염','장시간 끓여 뼈 연화'),
+      pair: P('탕','회','지리·전골') },
+    '은어': { intro: P('향魚 — 연회·진상·절식용 기록'),
+      nutri: P('단백질','칼슘(뼈째)','비타민 A·B군','오메가3 소량'),
+      benefit: P('단백질 → 성장','칼슘 → 골격','비타민A → 점막·시력·피부'),
+      season: P('6~8월','향 손실 빠름 — 즉식','비늘·복부·이취'),
+      cooktips: P('뼈째 소금구이','과열 금지','초회·무침 산미 유지'),
+      pair: P('소금구이','회무침','탕') }
+  }
+};
+
+const effRow = document.getElementById('effRow');
+const itemRow = document.getElementById('itemRow');
+const tabRow = document.getElementById('tabRow');
+const viewer = document.getElementById('viewer');
+const pathEl = document.getElementById('path');
+const search = document.getElementById('search');
+
+let selEff = null, selItem = null, selTab = 'intro';
+
+function renderEffects(){
+  effRow.innerHTML = '';
+  effects.forEach((e, idx)=>{
+    const b = document.createElement('button');
+    b.textContent = `${idx+1}. ${e.name}`;
+    b.className='pill-accent';
+    b.onclick=()=> selectEffect(e.key);
+    effRow.appendChild(b);
+  });
+}
+
+function selectEffect(key){
+  selEff = key; selItem = null; selTab = 'intro';
+  renderItems(); renderTabs();
+  viewer.textContent = '수산물을 선택하세요.';
+  pathEl.textContent = `${effects.find(e=>e.key===selEff).name} → 수산물 선택`;
+  search.value=''; search.dispatchEvent(new Event('input'));
+}
+
+function renderItems(){
+  itemRow.innerHTML='';
+  const dict = DB[selEff] || {};
+  Object.keys(dict).forEach((name)=>{
+    if(name==='placeholder') return;
+    const b=document.createElement('button');
+    b.textContent=name; b.className='pill-green';
+    b.onclick=()=>selectItem(name);
+    itemRow.appendChild(b);
+  });
+}
+
+function selectItem(name){
+  selItem=name; selTab='intro';
+  renderTabs(); showContent();
+  const eName = effects.find(e=>e.key===selEff).name;
+  const sName = sections.find(s=>s.key===selTab).name;
+  pathEl.textContent = `${eName} → ${name} → ${sName}`;
+}
+
+function renderTabs(){
+  tabRow.innerHTML='';
+  sections.forEach((s,i)=>{
+    const b=document.createElement('div');
+    b.className='tab'+(selTab===s.key?' active':'');
+    b.textContent = `${'QWERTY'[i]} · ${s.name}`;
+    b.onclick=()=>{selTab=s.key; showContent(); const eName = effects.find(e=>e.key===selEff)?.name||''; const sName = sections.find(z=>z.key===selTab).name; pathEl.textContent = `${eName} → ${selItem||''} → ${sName}`};
+    tabRow.appendChild(b);
+  });
+}
+
+function showContent(){
+  if(!selEff || !selItem){ viewer.textContent='효능과 수산물을 먼저 선택하세요.'; return; }
+  const data = DB[selEff][selItem];
+  const txt = data?.[selTab] || '준비된 데이터가 없습니다.';
+  let header = `· 수산물: ${selItem}\n· 항목: ${sections.find(s=>s.key===selTab).name}\n\n`;
+  viewer.textContent = header + txt.split('\n').map((line,i)=> (line.startsWith('·')||line.startsWith('•')||line.startsWith('-'))? line : (line.trim()? (i===0? line : '· '+line) : '')).join('\n');
+}
+
+search.addEventListener('input', ()=>{
+  const q = search.value.trim();
+  Array.from(itemRow.children).forEach(btn=>{
+    btn.style.display = btn.textContent.includes(q)?'inline-flex':'none';
+  });
+});
+
+window.addEventListener('keydown', (e)=>{
+  const n = parseInt(e.key,10);
+  if(n>=1 && n<=7){ selectEffect(effects[n-1].key); return; }
+  const idx = 'qwerty'.indexOf(e.key.toLowerCase());
+  if(idx>=0){ selTab = sections[idx].key; renderTabs(); showContent(); }
+});
+
+renderEffects(); renderTabs();
+</script>
+</body>
+</html>
